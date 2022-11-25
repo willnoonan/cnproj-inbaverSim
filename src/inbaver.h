@@ -154,6 +154,11 @@ typedef struct CSEntry {
     // size in bytes
     long payloadSize;
 
+
+    /* Added by wnoonan */
+    int requestCount;
+    /* end Added by wnoonan */
+
 } CSEntry;
 
 class ExchangedTransportInfo : public omnetpp::cObject

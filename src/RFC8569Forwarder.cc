@@ -252,6 +252,11 @@ void RFC8569Forwarder::processInterest(InterestMsg *interestMsg)
     // when Content Obj is in CS, send it to the Interest sender
     if (csEntry != NULL) {
 
+        /* Added by wnoonan */
+        csEntry->requestCount++; // increment the counter
+        /* end Added by wnoonan */
+
+
         // generate hit stats
         hitCount++;
         emit(cacheHitRatioSignal, (double) hitCount / (hitCount + missCount));
@@ -508,13 +513,77 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
         return;
     }
 
+
+    /**
+     * NOTE: The following is the original FIFO logic
+     * wnoonan
+     */
+
     // before adding content to CS, check if size will exceed the limit
     // when so, remove cache entries until the new content can be added
+//    if (maximumContentStoreSize > 0) {
+//        long removedBytes = 0;
+//        while ((currentCSSize + contentObjMsg->getPayloadSize()) > maximumContentStoreSize) {
+//            CSEntry *removingCSEntry = cs.front();
+//            cs.pop_front();
+//            currentCSSize -= removingCSEntry->payloadSize;
+//            removedBytes += removingCSEntry->payloadSize;
+//
+//            EV_INFO << simTime() << "Cache is full, cannot insert, removing: "
+//                    << " " << removingCSEntry->prefixName
+//                    << " " << removingCSEntry->dataName
+//                    << " " << removingCSEntry->versionName
+//                    << " " << removingCSEntry->segmentNum
+//                    << " " << removingCSEntry->payloadSize
+//                    << " " << currentCSSize
+//                    << endl;
+//
+//            delete removingCSEntry;
+//        }
+//
+//        // generate stats
+//        if (removedBytes > 0) {
+//            emit(cacheRemovalsBytesSignal, removedBytes);
+//            emit(cacheSizeBytesSignal, currentCSSize);
+//        }
+//    }
+
+
+
+
+    /* Added by wnoonan */
+
+    /**
+     * Least Frequently Used (LFU) logic
+     */
     if (maximumContentStoreSize > 0) {
         long removedBytes = 0;
         while ((currentCSSize + contentObjMsg->getPayloadSize()) > maximumContentStoreSize) {
-            CSEntry *removingCSEntry = cs.front();
-            cs.pop_front();
+
+            // Find the element with the smallest requestCount value
+
+            list<CSEntry*>::iterator iteratorCSEntry, erasePosition;
+            iteratorCSEntry = erasePosition = cs.begin();
+            CSEntry *removingCSEntry = *erasePosition;
+            while (iteratorCSEntry != cs.end()) {
+                CSEntry *csEntry = *iteratorCSEntry;
+
+                if(csEntry->requestCount < removingCSEntry->requestCount) {
+                    erasePosition = iteratorCSEntry;
+                    removingCSEntry = csEntry;
+                }
+
+                iteratorCSEntry++;
+            }
+
+
+            // remove the element
+            cs.erase(erasePosition);
+
+            // Note: If every element has the same requestCount value, the first element gets removed
+            // so this basically defaults to FIFO
+
+
             currentCSSize -= removingCSEntry->payloadSize;
             removedBytes += removingCSEntry->payloadSize;
 
@@ -537,6 +606,10 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
         }
     }
 
+    /* end Added by wnoonan */
+
+
+
     // add content to CS
     csEntry = new CSEntry;
     csEntry->prefixName = contentObjMsg->getPrefixName();
@@ -548,6 +621,11 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
     csEntry->totalNumSegments = contentObjMsg->getTotalNumSegments();
     csEntry->payloadAsString = contentObjMsg->getPayloadAsString();
     csEntry->payloadSize = contentObjMsg->getPayloadSize();
+
+    /* Added by wnoonan */
+    csEntry->requestCount = 0;  // initialize the requestCount to 0
+    /* end Added by wnoonan */
+
     cs.push_back(csEntry);
     currentCSSize += contentObjMsg->getPayloadSize();
 
