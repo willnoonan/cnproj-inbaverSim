@@ -1,0 +1,5 @@
+out
+*.xml
+*.exe
+*.oppbuildspec
+*.qtenvrc
