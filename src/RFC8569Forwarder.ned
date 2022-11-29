@@ -17,7 +17,7 @@ simple RFC8569Forwarder like IForwarder
     parameters:
 
         // size of cache in bytes - zero means unlimited caching
-        int maximumContentStoreSize @unit(byte) = default(0byte);
+        int maximumContentStoreSize @unit(byte) = default(100000byte);  // modified from 0 by wnoonan
 
         // statistic signals
         @signal[fwdTotalInterestsBytesReceived](type=long);
