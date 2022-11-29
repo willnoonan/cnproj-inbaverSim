@@ -253,9 +253,8 @@ void RFC8569Forwarder::processInterest(InterestMsg *interestMsg)
     if (csEntry != NULL) {
 
         /* Added by wnoonan */
-        csEntry->requestCount++; // increment the counter
+        csEntry->requestCount++;  // increment the cached content's request counter
         /* end Added by wnoonan */
-
 
         // generate hit stats
         hitCount++;
@@ -523,7 +522,6 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
         while ((currentCSSize + contentObjMsg->getPayloadSize()) > maximumContentStoreSize) {
 
             // Find the element with the smallest requestCount value
-
             list<CSEntry*>::iterator iteratorCSEntry, erasePosition;
             iteratorCSEntry = erasePosition = cs.begin();
             CSEntry *removingCSEntry = *erasePosition;
@@ -538,13 +536,9 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
                 iteratorCSEntry++;
             }
 
-
             // remove the element
             cs.erase(erasePosition);
-
-            // Note: If every element has the same requestCount value, the first element gets removed
-            // so this basically defaults to FIFO
-
+            // Note: If every element has the same requestCount value, the first element is removed (like FIFO)
 
             currentCSSize -= removingCSEntry->payloadSize;
             removedBytes += removingCSEntry->payloadSize;
