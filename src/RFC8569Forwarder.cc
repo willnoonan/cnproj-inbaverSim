@@ -515,46 +515,8 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
 
 
     /**
-     * NOTE: The following is the original FIFO logic
-     * wnoonan
-     */
-
-    // before adding content to CS, check if size will exceed the limit
-    // when so, remove cache entries until the new content can be added
-//    if (maximumContentStoreSize > 0) {
-//        long removedBytes = 0;
-//        while ((currentCSSize + contentObjMsg->getPayloadSize()) > maximumContentStoreSize) {
-//            CSEntry *removingCSEntry = cs.front();
-//            cs.pop_front();
-//            currentCSSize -= removingCSEntry->payloadSize;
-//            removedBytes += removingCSEntry->payloadSize;
-//
-//            EV_INFO << simTime() << "Cache is full, cannot insert, removing: "
-//                    << " " << removingCSEntry->prefixName
-//                    << " " << removingCSEntry->dataName
-//                    << " " << removingCSEntry->versionName
-//                    << " " << removingCSEntry->segmentNum
-//                    << " " << removingCSEntry->payloadSize
-//                    << " " << currentCSSize
-//                    << endl;
-//
-//            delete removingCSEntry;
-//        }
-//
-//        // generate stats
-//        if (removedBytes > 0) {
-//            emit(cacheRemovalsBytesSignal, removedBytes);
-//            emit(cacheSizeBytesSignal, currentCSSize);
-//        }
-//    }
-
-
-
-
-    /* Added by wnoonan */
-
-    /**
      * Least Frequently Used (LFU) logic
+     * Added by wnoonan
      */
     if (maximumContentStoreSize > 0) {
         long removedBytes = 0;
@@ -605,9 +567,7 @@ void RFC8569Forwarder::processContentObj(ContentObjMsg *contentObjMsg)
             emit(cacheSizeBytesSignal, currentCSSize);
         }
     }
-
     /* end Added by wnoonan */
-
 
 
     // add content to CS
